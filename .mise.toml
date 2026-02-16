@@ -1,0 +1,21 @@
+# mise configuration for go-cc-proxy
+# https://mise.jdx.dev
+
+# Version configuration
+[env]
+GOLANGCI_VERSION = "v2.9.0"
+
+# Tool definitions
+[tools]
+# golangci-lint installed via go install (isolated from system-wide installation)
+# Uses GOLANGCI_VERSION from env section above
+"go:github.com/golangci/golangci-lint/v2/cmd/golangci-lint" = "{{env.GOLANGCI_VERSION}}"
+
+# Task definitions
+[tasks.lint]
+description = "Run golangci-lint with auto-fix"
+run = "golangci-lint run --fix ./..."
+
+[tasks.test]
+description = "Run all Go tests with coverage and race detector"
+run = "go test -cover -race ./..."

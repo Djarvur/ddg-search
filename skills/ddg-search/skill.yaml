@@ -1,0 +1,19 @@
+name: ddg-search
+description: Web search and page content fetching without API keys
+
+tools:
+  - name: web-search
+    description: Search the web using DuckDuckGo
+    parameters:
+      - name: query
+        description: The search query
+        required: true
+    command: ddg-search "{{query}}"
+
+  - name: page-dump
+    description: Fetch a web page and convert to markdown
+    parameters:
+      - name: url
+        description: The URL to fetch
+        required: true
+    command: page-dump "{{url}}"
