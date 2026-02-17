@@ -3,11 +3,53 @@ package perplexity
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"testing"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
+func TestErrors(t *testing.T) {
+	t.Parallel()
+
+	if ErrRateLimited == nil {
+		t.Error("Expected ErrRateLimited to be defined")
+	}
+
+	if ErrMaxRetries == nil {
+		t.Error("Expected ErrMaxRetries to be defined")
+	}
+
+	if ErrUnauthorized == nil {
+		t.Error("Expected ErrUnauthorized to be defined")
+	}
+
+	if ErrBadRequest == nil {
+		t.Error("Expected ErrBadRequest to be defined")
+	}
+
+	if ErrPaymentRequired == nil {
+		t.Error("Expected ErrPaymentRequired to be defined")
+	}
+}
+
+func TestConstants(t *testing.T) {
+	t.Parallel()
+
+	if jitterMs != 500 {
+		t.Errorf("Expected jitterMs 500, got %d", jitterMs)
+	}
+
+	if apiBaseURL != "https://api.perplexity.ai" {
+		t.Errorf("Expected apiBaseURL 'https://api.perplexity.ai', got %q", apiBaseURL)
+	}
+}
+
 func TestNewClient(t *testing.T) {
+	t.Parallel()
+
 	apiKey := "test-api-key"
 	retryOpts := DefaultRetryOptions()
 
@@ -27,6 +69,8 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestDefaultRetryOptions(t *testing.T) {
+	t.Parallel()
+
 	opts := DefaultRetryOptions()
 
 	if opts.MaxRetries != 3 {
@@ -47,6 +91,8 @@ func TestDefaultRetryOptions(t *testing.T) {
 }
 
 func TestCalculateDelay(t *testing.T) {
+	t.Parallel()
+
 	client := NewClient("test-key", RetryOptions{
 		MaxRetries:        3,
 		BaseDelay:         1 * time.Second,
@@ -77,12 +123,151 @@ func TestCalculateDelay(t *testing.T) {
 }
 
 func TestCheckAPIError(t *testing.T) {
-	// Note: checkAPIError is tested indirectly through integration tests
-	// This is a placeholder for future unit tests with proper mocking
-	t.Skip("checkAPIError requires proper resty.Response mocking")
+	t.Parallel()
+
+	client := NewClient("test-key", DefaultRetryOptions())
+
+	tests := []struct {
+		name       string
+		statusCode int
+		wantErr    error
+	}{
+		{"unauthorized", 401, ErrUnauthorized},
+		{"bad request", 400, ErrBadRequest},
+		{"payment required", 402, ErrPaymentRequired},
+		{"rate limited", 429, ErrRateLimited},
+		{"server error", 500, errors.New("server error: 500")}, // Returns a generic error
+		{"success", 200, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Create a mock response
+			resp := &resty.Response{}
+			resp.RawResponse = &http.Response{StatusCode: tt.statusCode}
+
+			err := client.checkAPIError(resp)
+			if tt.wantErr != nil {
+				if err == nil || err.Error() != tt.wantErr.Error() {
+					t.Errorf("checkAPIError() = %v, want %v", err, tt.wantErr)
+				}
+			} else if err != nil {
+				t.Errorf("checkAPIError() = %v, want nil", err)
+			}
+		})
+	}
+}
+
+func TestIsRateLimited(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		status   int
+		err      error
+		expected bool
+	}{
+		{"rate limit status", 429, nil, true},
+		{"internal server error", 500, nil, true},
+		{"bad gateway", 502, nil, true},
+		{"service unavailable", 503, nil, true},
+		{"gateway timeout", 504, nil, true},
+		{"network error", 0, errors.New("network error"), true},
+		{"success", 200, nil, false},
+		{"not found", 404, nil, false},
+		{"bad request", 400, nil, false},
+		{"unauthorized", 401, nil, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var resp *resty.Response
+			if tt.status > 0 {
+				resp = &resty.Response{}
+				resp.RawResponse = &http.Response{StatusCode: tt.status}
+			}
+
+			got := isRateLimited(resp, tt.err)
+			if got != tt.expected {
+				t.Errorf("isRateLimited() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestNewClient_WithDebug(t *testing.T) {
+	t.Parallel()
+
+	retryOpts := DefaultRetryOptions()
+	retryOpts.Debug = true
+
+	client := NewClient("test-key", retryOpts)
+
+	if client == nil {
+		t.Fatal("NewClient returned nil")
+	}
+
+	if client.debugWriter == nil {
+		t.Error("Expected debugWriter to be set when Debug is true")
+	}
+}
+
+func TestNewClient_WithoutDebug(t *testing.T) {
+	t.Parallel()
+
+	retryOpts := DefaultRetryOptions()
+	retryOpts.Debug = false
+
+	client := NewClient("test-key", retryOpts)
+
+	if client == nil {
+		t.Fatal("NewClient returned nil")
+	}
+
+	if client.debugWriter == nil {
+		t.Error("Expected debugWriter to be set (to io.Discard) when Debug is false")
+	}
+}
+
+func TestRetryOptions(t *testing.T) {
+	t.Parallel()
+
+	opts := RetryOptions{
+		MaxRetries:        5,
+		BaseDelay:         2 * time.Second,
+		MaxDelay:          60 * time.Second,
+		BackoffMultiplier: 3.0,
+		Debug:             true,
+	}
+
+	if opts.MaxRetries != 5 {
+		t.Errorf("Expected MaxRetries 5, got %d", opts.MaxRetries)
+	}
+
+	if opts.BaseDelay != 2*time.Second {
+		t.Errorf("Expected BaseDelay 2s, got %v", opts.BaseDelay)
+	}
+
+	if opts.MaxDelay != 60*time.Second {
+		t.Errorf("Expected MaxDelay 60s, got %v", opts.MaxDelay)
+	}
+
+	if opts.BackoffMultiplier != 3.0 {
+		t.Errorf("Expected BackoffMultiplier 3.0, got %f", opts.BackoffMultiplier)
+	}
+
+	if opts.Debug != true {
+		t.Errorf("Expected Debug true, got %v", opts.Debug)
+	}
 }
 
 func TestSearchWithEmptyQuery(t *testing.T) {
+	t.Parallel()
+
 	client := NewClient("test-key", DefaultRetryOptions())
 
 	ctx := context.Background()

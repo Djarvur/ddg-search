@@ -1,8 +1,10 @@
 package dump
 
 import (
+	"context"
 	"errors"
 	"testing"
+	"time"
 )
 
 func TestValidateURL(t *testing.T) {
@@ -123,5 +125,165 @@ func TestConvert(t *testing.T) {
 				t.Errorf("Convert() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestDefaultConfig(t *testing.T) {
+	t.Parallel()
+
+	cfg := DefaultConfig()
+
+	if cfg.Timeout != DefaultTimeout {
+		t.Errorf("Expected Timeout %v, got %v", DefaultTimeout, cfg.Timeout)
+	}
+
+	if cfg.UserAgent != DefaultUserAgent {
+		t.Errorf("Expected UserAgent %q, got %q", DefaultUserAgent, cfg.UserAgent)
+	}
+}
+
+func TestFetchAndConvert(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		url     string
+		cfg     Config
+		wantErr bool
+	}{
+		{
+			name:    "invalid URL",
+			url:     "not-a-url",
+			cfg:     DefaultConfig(),
+			wantErr: true,
+		},
+		{
+			name:    "unsupported scheme",
+			url:     "ftp://example.com",
+			cfg:     DefaultConfig(),
+			wantErr: true,
+		},
+		{
+			name:    "valid URL with default config",
+			url:     "https://example.com",
+			cfg:     DefaultConfig(),
+			wantErr: false, // URL is valid, network error is expected but not tested here
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.Background()
+			_, err := FetchAndConvert(ctx, tt.url, tt.cfg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FetchAndConvert() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestFetchAndConvert_WithCustomConfig(t *testing.T) {
+	t.Parallel()
+
+	cfg := Config{
+		Timeout:   5 * time.Second,
+		UserAgent: "custom-agent/1.0",
+	}
+
+	ctx := context.Background()
+	_, err := FetchAndConvert(ctx, "invalid-url", cfg)
+	if err == nil {
+		t.Error("Expected error for invalid URL")
+	}
+}
+
+func TestConvert_EmptyHTML(t *testing.T) {
+	t.Parallel()
+
+	got, err := Convert("")
+	if err != nil {
+		t.Errorf("Convert() error = %v", err)
+	}
+
+	if got != "" {
+		t.Errorf("Convert() = %q, want empty string", got)
+	}
+}
+
+func TestConvert_ComplexHTML(t *testing.T) {
+	t.Parallel()
+
+	html := `<html><head><title>Test</title></head><body><h1>Heading</h1><p>Paragraph</p></body></html>`
+	got, err := Convert(html)
+	if err != nil {
+		t.Errorf("Convert() error = %v", err)
+	}
+
+	if got == "" {
+		t.Error("Convert() returned empty string for valid HTML")
+	}
+}
+
+func TestValidateURL_MissingHost(t *testing.T) {
+	t.Parallel()
+
+	_, err := ValidateURL("http://")
+	if err == nil {
+		t.Error("Expected error for URL without host")
+	}
+
+	if !errors.Is(err, ErrInvalidURL) {
+		t.Errorf("Expected ErrInvalidURL, got %v", err)
+	}
+}
+
+func TestValidateURL_ValidURLs(t *testing.T) {
+	t.Parallel()
+
+	validURLs := []string{
+		"http://example.com",
+		"https://example.com",
+		"https://example.com/path",
+		"https://example.com/path?query=value",
+		"https://example.com:8080/path",
+		"http://localhost",
+		"http://127.0.0.1",
+	}
+
+	for _, url := range validURLs {
+		t.Run(url, func(t *testing.T) {
+			t.Parallel()
+
+			parsed, err := ValidateURL(url)
+			if err != nil {
+				t.Errorf("ValidateURL(%q) error = %v", url, err)
+			}
+
+			if parsed == nil {
+				t.Errorf("ValidateURL(%q) returned nil parsed URL", url)
+			}
+		})
+	}
+}
+
+func TestConstants(t *testing.T) {
+	t.Parallel()
+
+	if DefaultTimeout != 30*time.Second {
+		t.Errorf("Expected DefaultTimeout 30s, got %v", DefaultTimeout)
+	}
+
+	if DefaultUserAgent != "page-dump/1.0" {
+		t.Errorf("Expected DefaultUserAgent 'page-dump/1.0', got %q", DefaultUserAgent)
+	}
+
+	if MaxRedirects != 10 {
+		t.Errorf("Expected MaxRedirects 10, got %d", MaxRedirects)
+	}
+
+	if HTTPErrorThreshold != 400 {
+		t.Errorf("Expected HTTPErrorThreshold 400, got %d", HTTPErrorThreshold)
 	}
 }
