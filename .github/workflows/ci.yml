@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   lint:
@@ -41,8 +42,24 @@ jobs:
           go-version: stable
           cache: true
 
-      - name: Run tests
-        run: go test -cover -race -v ./...
+      - name: Run tests with coverage
+        run: go test -coverprofile=coverage.out -covermode=atomic -race -v ./...
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          file: coverage.out
+          format: golang
+
+      - name: Check coverage threshold
+        run: |
+          coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${coverage}%"
+          if [ "$(echo "$coverage < 50" | bc -l)" -eq 1 ]; then
+            echo "Coverage ${coverage}% is below threshold of 50%"
+            exit 1
+          fi
+          echo "Coverage check passed"
 
   build:
     name: Build
