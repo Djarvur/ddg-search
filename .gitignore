@@ -35,3 +35,6 @@ go.work.sum
 
 # macOS system file
 .DS_Store
+
+# AI agent commands
+.roo/

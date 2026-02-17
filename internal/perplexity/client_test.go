@@ -86,8 +86,8 @@ func TestSearchWithEmptyQuery(t *testing.T) {
 	client := NewClient("test-key", DefaultRetryOptions())
 
 	ctx := context.Background()
-	_, err := client.Search(ctx, "", 5, "sonar-medium-online")
 
+	_, err := client.Search(ctx, "", 5, "sonar-medium-online")
 	if err == nil {
 		t.Error("Expected error for empty query")
 	}

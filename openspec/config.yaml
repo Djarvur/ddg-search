@@ -6,3 +6,5 @@ schema: spec-driven
 context: |
   Tech stack: Golang
   Domain: AI agent skill for searching the web via DuckDuckGo (no API key required)
+  Style: use golangci-lint for linting.
+  Testing: use "go test -cover -race" command for testing. Write tests first.

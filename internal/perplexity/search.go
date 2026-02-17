@@ -21,11 +21,11 @@ type SearchOptions struct {
 // Search performs a web search using the Perplexity API.
 func (c *Client) Search(ctx context.Context, query string, maxResults int, model string) (*SearchResults, error) {
 	if query == "" {
-		return nil, fmt.Errorf("query cannot be empty")
+		return nil, errors.New("query cannot be empty")
 	}
 
 	// Build request body
-	reqBody := map[string]interface{}{
+	reqBody := map[string]any{
 		"model": model,
 		"messages": []map[string]string{
 			{
@@ -43,7 +43,6 @@ func (c *Client) Search(ctx context.Context, query string, maxResults int, model
 		SetBody(reqBody).
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json"))
-
 	if err != nil {
 		return nil, fmt.Errorf("API request failed: %w", err)
 	}
@@ -119,6 +118,7 @@ func (r *SearchResults) Markdown() string {
 	// Write citations
 	if len(r.Citations) > 0 {
 		sb.WriteString("## Sources\n\n")
+
 		for _, ref := range r.References {
 			sb.WriteString(fmt.Sprintf("%d. %s\n", ref.Index, ref.URL))
 		}

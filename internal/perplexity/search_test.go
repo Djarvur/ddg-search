@@ -72,6 +72,7 @@ func TestSearchResults_Markdown_EmptyAnswer(t *testing.T) {
 	}
 
 	got := results.Markdown()
+
 	expected := "\n\n"
 	if got != expected {
 		t.Errorf("Markdown() = %q, want %q", got, expected)
@@ -91,6 +92,7 @@ func TestSearchResults_Markdown_SingleCitation(t *testing.T) {
 	}
 
 	got := results.Markdown()
+
 	expected := "Single citation answer.\n\n## Sources\n\n1. https://example.com/1\n"
 	if got != expected {
 		t.Errorf("Markdown() = %q, want %q", got, expected)
@@ -118,6 +120,7 @@ func TestSearchResults_Markdown_MultipleCitations(t *testing.T) {
 	}
 
 	got := results.Markdown()
+
 	expected := "Multiple citations answer.\n\n## Sources\n\n1. https://example.com/1\n2. https://example.com/2\n3. https://example.com/3\n4. https://example.com/4\n5. https://example.com/5\n"
 	if got != expected {
 		t.Errorf("Markdown() = %q, want %q", got, expected)

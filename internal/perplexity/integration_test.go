@@ -55,6 +55,7 @@ func TestSearchIntegration(t *testing.T) {
 		// Test with invalid API key
 		t.Run("invalid API key", func(t *testing.T) {
 			invalidClient := NewClient("invalid-key", DefaultRetryOptions())
+
 			_, err := invalidClient.Search(ctx, "test query", 5, "sonar-medium-online")
 			if err == nil {
 				t.Error("Expected error with invalid API key")

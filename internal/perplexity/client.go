@@ -16,17 +16,17 @@ import (
 
 // Errors returned by the Perplexity client.
 var (
-	ErrRateLimited   = errors.New("rate limited by Perplexity API")
-	ErrMaxRetries    = errors.New("max retries exceeded")
-	ErrUnauthorized  = errors.New("invalid API key")
-	ErrBadRequest    = errors.New("bad request")
+	ErrRateLimited     = errors.New("rate limited by Perplexity API")
+	ErrMaxRetries      = errors.New("max retries exceeded")
+	ErrUnauthorized    = errors.New("invalid API key")
+	ErrBadRequest      = errors.New("bad request")
 	ErrPaymentRequired = errors.New("payment required - API quota exceeded")
 )
 
 // Internal constants.
 const (
-	jitterMs        = 500
-	apiBaseURL      = "https://api.perplexity.ai"
+	jitterMs   = 500
+	apiBaseURL = "https://api.perplexity.ai"
 )
 
 // RetryOptions configures the retry behavior for rate-limited requests.
@@ -134,6 +134,7 @@ func (c *Client) Do(ctx context.Context, req *resty.Request) (*resty.Response, e
 			select {
 			case <-ctx.Done():
 				c.debugf("context cancelled during retry delay")
+
 				return nil, fmt.Errorf("context cancelled during retry: %w", ctx.Err())
 			case <-time.After(delay):
 			}
@@ -142,10 +143,12 @@ func (c *Client) Do(ctx context.Context, req *resty.Request) (*resty.Response, e
 		resp, err := req.Send()
 		if err != nil {
 			c.debugf("attempt %d: request error: %v", attempt+1, err)
+
 			lastErr = err
 			if !isRateLimited(nil, err) {
 				break // Non-retryable error
 			}
+
 			continue
 		}
 
@@ -172,6 +175,7 @@ func (c *Client) Do(ctx context.Context, req *resty.Request) (*resty.Response, e
 
 		// Success
 		c.debugf("attempt %d: success", attempt+1)
+
 		return resp, nil
 	}
 
@@ -203,7 +207,7 @@ func (c *Client) checkAPIError(resp *resty.Response) error {
 }
 
 // debugf writes debug output to the debug writer.
-func (c *Client) debugf(format string, args ...interface{}) {
+func (c *Client) debugf(format string, args ...any) {
 	if c.debugWriter != io.Discard {
 		fmt.Fprintf(c.debugWriter, "[perplexity] "+format+"\n", args...)
 	}
