@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -219,12 +220,20 @@ func TestDo(t *testing.T) {
 	t.Run("max retries exceeded", func(t *testing.T) {
 		t.Parallel()
 
+		// Create a test server that returns 401 Unauthorized
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer server.Close()
+
+		// Create a client with the test server URL
 		client := NewClient("invalid-key", RetryOptions{
 			MaxRetries:        1,
 			BaseDelay:         1 * time.Millisecond,
 			MaxDelay:          10 * time.Millisecond,
 			BackoffMultiplier: 1.0,
 		})
+		client.httpClient.SetBaseURL(server.URL)
 
 		ctx := context.Background()
 

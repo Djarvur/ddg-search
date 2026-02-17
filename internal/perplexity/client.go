@@ -122,7 +122,7 @@ func (c *Client) Do(ctx context.Context, req *resty.Request) (*resty.Response, e
 			return nil, err
 		}
 
-		resp, err := req.Send()
+		resp, err := req.SetContext(ctx).Send()
 		if err != nil {
 			c.debugf("attempt %d: request error: %v", attempt+1, err)
 
