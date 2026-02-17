@@ -1,4 +1,3 @@
-// Package perplexity provides Perplexity API search functionality.
 package perplexity
 
 import (
@@ -9,6 +8,8 @@ import (
 
 // TestSearchIntegration performs an integration test with the real Perplexity API.
 // This test is skipped unless PERPLEXITY_API_KEY is set and INTEGRATION_TEST is set to "true".
+//
+//nolint:gocognit,funlen,tparallel // Integration test with multiple subtests
 func TestSearchIntegration(t *testing.T) {
 	apiKey := os.Getenv("PERPLEXITY_API_KEY")
 	if apiKey == "" {
@@ -24,6 +25,8 @@ func TestSearchIntegration(t *testing.T) {
 
 	// Test successful search
 	t.Run("successful search", func(t *testing.T) {
+		t.Parallel()
+
 		results, err := client.Search(ctx, "What is Go programming language?", 5, "sonar-medium-online")
 		if err != nil {
 			t.Fatalf("Search failed: %v", err)
@@ -52,8 +55,12 @@ func TestSearchIntegration(t *testing.T) {
 
 	// Test error scenarios
 	t.Run("error scenarios", func(t *testing.T) {
+		t.Parallel()
+
 		// Test with invalid API key
 		t.Run("invalid API key", func(t *testing.T) {
+			t.Parallel()
+
 			invalidClient := NewClient("invalid-key", DefaultRetryOptions())
 
 			_, err := invalidClient.Search(ctx, "test query", 5, "sonar-medium-online")
@@ -64,6 +71,8 @@ func TestSearchIntegration(t *testing.T) {
 
 		// Test with empty query
 		t.Run("empty query", func(t *testing.T) {
+			t.Parallel()
+
 			_, err := client.Search(ctx, "", 5, "sonar-medium-online")
 			if err == nil {
 				t.Error("Expected error with empty query")
@@ -73,6 +82,8 @@ func TestSearchIntegration(t *testing.T) {
 
 	// Test with different models
 	t.Run("different models", func(t *testing.T) {
+		t.Parallel()
+
 		models := []string{
 			"sonar-medium-online",
 			"sonar-small-online",
@@ -80,6 +91,8 @@ func TestSearchIntegration(t *testing.T) {
 
 		for _, model := range models {
 			t.Run(model, func(t *testing.T) {
+				t.Parallel()
+
 				results, err := client.Search(ctx, "What is golang?", 3, model)
 				if err != nil {
 					t.Logf("Warning: Model %s failed: %v", model, err)

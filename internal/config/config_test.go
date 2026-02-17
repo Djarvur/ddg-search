@@ -1,4 +1,3 @@
-// Package config defines configuration types for the ddg-search search client.
 package config
 
 import (

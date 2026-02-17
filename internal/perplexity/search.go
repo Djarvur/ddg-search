@@ -1,10 +1,8 @@
-// Package perplexity provides Perplexity API search functionality.
 package perplexity
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -20,9 +18,9 @@ type SearchOptions struct {
 }
 
 // Search performs a web search using the Perplexity API.
-func (c *Client) Search(ctx context.Context, query string, maxResults int, model string) (*SearchResults, error) {
+func (c *Client) Search(ctx context.Context, query string, _ int, model string) (*SearchResults, error) {
 	if query == "" {
-		return nil, errors.New("query cannot be empty")
+		return nil, ErrQueryEmpty
 	}
 
 	// Build request body
@@ -34,8 +32,8 @@ func (c *Client) Search(ctx context.Context, query string, maxResults int, model
 				"content": query,
 			},
 		},
-		"max_tokens":  500,
-		"temperature": 0.1,
+		"max_tokens":  maxTokens,
+		"temperature": temperature,
 		"stream":      false,
 	}
 
@@ -50,13 +48,15 @@ func (c *Client) Search(ctx context.Context, query string, maxResults int, model
 
 	// Parse response
 	var apiResponse APIResponse
-	if err := json.Unmarshal(resp.Body(), &apiResponse); err != nil {
+
+	err = json.Unmarshal(resp.Body(), &apiResponse)
+	if err != nil {
 		return nil, fmt.Errorf("failed to parse API response: %w", err)
 	}
 
 	// Check for API errors in response
 	if apiResponse.Error != nil {
-		return nil, fmt.Errorf("API error: %s", apiResponse.Error.Message)
+		return nil, fmt.Errorf("%w: %s", ErrAPI, apiResponse.Error.Message)
 	}
 
 	// Convert to SearchResults

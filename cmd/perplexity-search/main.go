@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/Djarvur/ddg-search/internal/perplexity"
 	"github.com/urfave/cli/v3"
@@ -18,13 +19,21 @@ const version = "dev"
 const (
 	defaultMaxResults = 5
 	defaultModel      = "sonar-medium-online"
+
+	// Retry configuration.
+	defaultMaxRetries        = 3
+	defaultMaxDelaySeconds   = 30
+	defaultBackoffMultiplier = 2.0
 )
 
 // errNoQuery is returned when no search query is provided.
 var errNoQuery = errors.New("no search query provided")
 
 // errNoAPIKey is returned when the Perplexity API key is not set.
-var errNoAPIKey = errors.New("PERPLEXITY_API_KEY environment variable not set. Please set it in your .env file or shell environment.")
+var errNoAPIKey = errors.New(
+	"perplexity API key environment variable not set. " +
+		"Please set it in your .env file or shell environment",
+)
 
 func main() {
 	cmd := &cli.Command{
@@ -82,10 +91,10 @@ func runSearch(ctx context.Context, cmd *cli.Command) error {
 
 	// Create client
 	client := perplexity.NewClient(apiKey, perplexity.RetryOptions{
-		MaxRetries:        3,
-		BaseDelay:         1 * 1000000000, // 1 second
-		MaxDelay:          30 * 1000000000, // 30 seconds
-		BackoffMultiplier: 2.0,
+		MaxRetries:        defaultMaxRetries,
+		BaseDelay:         time.Second,
+		MaxDelay:          time.Duration(defaultMaxDelaySeconds) * time.Second,
+		BackoffMultiplier: defaultBackoffMultiplier,
 		Debug:             debug,
 	})
 
@@ -96,7 +105,7 @@ func runSearch(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Output results
-	fmt.Println(results.Markdown())
+	_, _ = fmt.Fprint(os.Stdout, results.Markdown())
 
 	return nil
 }

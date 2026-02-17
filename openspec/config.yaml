@@ -5,6 +5,6 @@ schema: spec-driven
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
 context: |
   Tech stack: Golang
-  Domain: AI agent skill for searching the web via DuckDuckGo (no API key required)
-  Style: use golangci-lint for linting.
-  Testing: use "go test -cover -race ./..." command for testing. Write tests first. Aim for 50% code coverage.
+  Domain: AI agent skill for searching the web via DuckDuckGo and Perplexity
+  Style: use "mise lint" command for linting. No linter errors should remain.
+  Testing: use "mise test" command for testing. Write tests first. Aim for 50% code coverage.

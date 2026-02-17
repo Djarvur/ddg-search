@@ -1,4 +1,3 @@
-// Package perplexity provides Perplexity API search functionality.
 package perplexity
 
 import (
@@ -118,6 +117,8 @@ func TestSearchResults_Empty(t *testing.T) {
 }
 
 func TestSearchResults_Markdown(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		results  *SearchResults
@@ -167,6 +168,8 @@ func TestSearchResults_Markdown(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got := tt.results.Markdown()
 			if got != tt.expected {
 				t.Errorf("Markdown() = %q, want %q", got, tt.expected)
@@ -176,6 +179,8 @@ func TestSearchResults_Markdown(t *testing.T) {
 }
 
 func TestSearchResults_Markdown_EmptyAnswer(t *testing.T) {
+	t.Parallel()
+
 	results := &SearchResults{
 		Query:      "test query",
 		Answer:     "",
@@ -192,6 +197,8 @@ func TestSearchResults_Markdown_EmptyAnswer(t *testing.T) {
 }
 
 func TestSearchResults_Markdown_SingleCitation(t *testing.T) {
+	t.Parallel()
+
 	results := &SearchResults{
 		Query:  "test query",
 		Answer: "Single citation answer.",
@@ -212,6 +219,8 @@ func TestSearchResults_Markdown_SingleCitation(t *testing.T) {
 }
 
 func TestSearchResults_Markdown_MultipleCitations(t *testing.T) {
+	t.Parallel()
+
 	results := &SearchResults{
 		Query:  "test query",
 		Answer: "Multiple citations answer.",

@@ -176,6 +176,7 @@ func TestFetchAndConvert(t *testing.T) {
 			t.Parallel()
 
 			ctx := context.Background()
+
 			_, err := FetchAndConvert(ctx, tt.url, tt.cfg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FetchAndConvert() error = %v, wantErr %v", err, tt.wantErr)
@@ -193,6 +194,7 @@ func TestFetchAndConvert_WithCustomConfig(t *testing.T) {
 	}
 
 	ctx := context.Background()
+
 	_, err := FetchAndConvert(ctx, "invalid-url", cfg)
 	if err == nil {
 		t.Error("Expected error for invalid URL")
@@ -216,6 +218,7 @@ func TestConvert_ComplexHTML(t *testing.T) {
 	t.Parallel()
 
 	html := `<html><head><title>Test</title></head><body><h1>Heading</h1><p>Paragraph</p></body></html>`
+
 	got, err := Convert(html)
 	if err != nil {
 		t.Errorf("Convert() error = %v", err)

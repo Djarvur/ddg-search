@@ -1,4 +1,3 @@
-// Package main provides the CLI entry point for ddg-search.
 package main
 
 import (

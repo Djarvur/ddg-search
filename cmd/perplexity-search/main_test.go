@@ -1,4 +1,3 @@
-// Package main provides the CLI entry point for perplexity-search.
 package main
 
 import (
