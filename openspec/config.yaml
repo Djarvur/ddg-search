@@ -1,0 +1,8 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  Tech stack: Golang
+  Domain: AI agent skill for searching the web via DuckDuckGo (no API key required)
