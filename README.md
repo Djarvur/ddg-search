@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Djarvur/ddg-search/actions/workflows/ci.yml/badge.svg)](https://github.com/Djarvur/ddg-search/actions/workflows/ci.yml)
 [![Security](https://github.com/Djarvur/ddg-search/actions/workflows/security.yml/badge.svg)](https://github.com/Djarvur/ddg-search/actions/workflows/security.yml)
-[![Coverage](https://codecov.io/gh/Djarvur/ddg-search/branch/main/graph/badge.svg)](https://codecov.io/gh/Djarvur/ddg-search)
+[![Coveralls](https://coveralls.io/repos/github/Djarvur/ddg-search/badge.svg)](https://coveralls.io/github/Djarvur/ddg-search)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Djarvur/ddg-search)](https://goreportcard.com/report/github.com/Djarvur/ddg-search)
 [![GoDoc](https://godoc.org/github.com/Djarvur/ddg-search?status.svg)](https://godoc.org/github.com/Djarvur/ddg-search)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
