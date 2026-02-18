@@ -1,3 +1,4 @@
+// Package main provides the CLI entry point for page-dump.
 package main
 
 import (

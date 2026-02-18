@@ -221,7 +221,7 @@ func TestDo(t *testing.T) {
 		t.Parallel()
 
 		// Create a test server that returns 401 Unauthorized
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		}))
 		defer server.Close()
