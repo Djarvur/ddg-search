@@ -32,3 +32,9 @@ go.work.sum
 # .vscode/
 
 .claude
+
+# macOS system file
+.DS_Store
+
+# AI agent commands
+.roo/

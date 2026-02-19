@@ -1,0 +1,11 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  Tech stack: Golang
+  Domain: AI agent skill for searching the web via DuckDuckGo and Perplexity
+  Style: use "mise lint" command for linting. No linter errors should remain.
+  Testing: use "mise test" command for testing. Write tests first. Aim for 50% code coverage.
+  Other: ensure "go build", "mise lint" and "mise test" commands are passed after applying a change.

@@ -1,0 +1,17 @@
+name: perplexity-search
+description: Web search using Perplexity API with AI-powered results and citations
+
+tools:
+  - name: perplexity-search
+    description: Search the web using Perplexity API for high-quality, AI-powered search results with citations
+    parameters:
+      - name: query
+        description: The search query string
+        required: true
+      - name: max-results
+        description: Maximum number of results to return (default: 5)
+        required: false
+      - name: model
+        description: Perplexity model to use (default: sonar-medium-online)
+        required: false
+    command: perplexity-search --max-results "{{max-results}}" --model "{{model}}" "{{query}}"
