@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/Djarvur/ddg-search/internal/perplexity"
 	"github.com/urfave/cli/v3"
@@ -17,13 +16,7 @@ const version = "dev"
 
 // Default CLI values.
 const (
-	defaultMaxResults = 5
-	defaultModel      = "sonar-medium-online"
-
-	// Retry configuration.
-	defaultMaxRetries        = 3
-	defaultMaxDelaySeconds   = 30
-	defaultBackoffMultiplier = 2.0
+	defaultModel = "sonar-medium-online"
 )
 
 // errNoQuery is returned when no search query is provided.
@@ -42,21 +35,10 @@ func main() {
 		Version: version,
 		Flags: []cli.Flag{
 			// Search options
-			&cli.IntFlag{
-				Name:  "max-results",
-				Usage: "maximum number of results to return",
-				Value: defaultMaxResults,
-			},
 			&cli.StringFlag{
 				Name:  "model",
 				Usage: "Perplexity model to use (e.g., sonar-medium-online, sonar-pro-online)",
 				Value: defaultModel,
-			},
-			// Debug
-			&cli.BoolFlag{
-				Name:  "debug",
-				Usage: "enable debug logging to stderr",
-				Value: false,
 			},
 		},
 		Action: runSearch,
@@ -79,9 +61,7 @@ func runSearch(ctx context.Context, cmd *cli.Command) error {
 	query := args.First()
 
 	// Get flags
-	maxResults := cmd.Int("max-results")
 	model := cmd.String("model")
-	debug := cmd.Bool("debug")
 
 	// Get API key from environment
 	apiKey := os.Getenv("PERPLEXITY_API_KEY")
@@ -90,16 +70,10 @@ func runSearch(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Create client
-	client := perplexity.NewClient(apiKey, perplexity.RetryOptions{
-		MaxRetries:        defaultMaxRetries,
-		BaseDelay:         time.Second,
-		MaxDelay:          time.Duration(defaultMaxDelaySeconds) * time.Second,
-		BackoffMultiplier: defaultBackoffMultiplier,
-		Debug:             debug,
-	})
+	client := perplexity.NewClient(apiKey)
 
 	// Perform search
-	results, err := client.Search(ctx, query, maxResults, model)
+	results, err := client.Search(ctx, query, model)
 	if err != nil {
 		return fmt.Errorf("search failed: %w", err)
 	}

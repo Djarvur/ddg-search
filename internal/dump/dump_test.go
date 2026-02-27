@@ -1,10 +1,12 @@
-package dump
+package dump_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/Djarvur/ddg-search/internal/dump"
 )
 
 func TestValidateURL(t *testing.T) {
@@ -38,27 +40,27 @@ func TestValidateURL(t *testing.T) {
 		{
 			name:    "unsupported scheme FTP",
 			url:     "ftp://example.com",
-			wantErr: ErrUnsupportedScheme,
+			wantErr: dump.ErrUnsupportedScheme,
 		},
 		{
 			name:    "unsupported scheme file",
 			url:     "file:///path/to/file",
-			wantErr: ErrUnsupportedScheme,
+			wantErr: dump.ErrUnsupportedScheme,
 		},
 		{
 			name:    "missing scheme",
 			url:     "example.com",
-			wantErr: ErrUnsupportedScheme,
+			wantErr: dump.ErrUnsupportedScheme,
 		},
 		{
 			name:    "empty URL",
 			url:     "",
-			wantErr: ErrUnsupportedScheme,
+			wantErr: dump.ErrUnsupportedScheme,
 		},
 		{
 			name:    "invalid URL characters",
 			url:     "http://[invalid",
-			wantErr: ErrInvalidURL,
+			wantErr: dump.ErrInvalidURL,
 		},
 	}
 
@@ -66,19 +68,19 @@ func TestValidateURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := ValidateURL(tt.url)
+			_, err := dump.ValidateURL(tt.url)
 			if tt.wantErr != nil {
 				if err == nil {
-					t.Errorf("ValidateURL(%q) = nil, want %v", tt.url, tt.wantErr)
+					t.Errorf("dump.ValidateURL(%q) = nil, want %v", tt.url, tt.wantErr)
 
 					return
 				}
 
 				if !errors.Is(err, tt.wantErr) {
-					t.Errorf("ValidateURL(%q) = %v, want %v", tt.url, err, tt.wantErr)
+					t.Errorf("dump.ValidateURL(%q) = %v, want %v", tt.url, err, tt.wantErr)
 				}
 			} else if err != nil {
-				t.Errorf("ValidateURL(%q) = %v, want nil", tt.url, err)
+				t.Errorf("dump.ValidateURL(%q) = %v, want nil", tt.url, err)
 			}
 		})
 	}
@@ -114,15 +116,15 @@ func TestConvert(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := Convert(tt.html)
+			got, err := dump.Convert(tt.html)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Convert() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("dump.Convert() error = %v, wantErr %v", err, tt.wantErr)
 
 				return
 			}
 
 			if got != tt.want {
-				t.Errorf("Convert() = %q, want %q", got, tt.want)
+				t.Errorf("dump.Convert() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -131,14 +133,14 @@ func TestConvert(t *testing.T) {
 func TestDefaultConfig(t *testing.T) {
 	t.Parallel()
 
-	cfg := DefaultConfig()
+	cfg := dump.DefaultConfig()
 
-	if cfg.Timeout != DefaultTimeout {
-		t.Errorf("Expected Timeout %v, got %v", DefaultTimeout, cfg.Timeout)
+	if cfg.Timeout != dump.DefaultTimeout {
+		t.Errorf("Expected Timeout %v, got %v", dump.DefaultTimeout, cfg.Timeout)
 	}
 
-	if cfg.UserAgent != DefaultUserAgent {
-		t.Errorf("Expected UserAgent %q, got %q", DefaultUserAgent, cfg.UserAgent)
+	if cfg.UserAgent != dump.DefaultUserAgent {
+		t.Errorf("Expected UserAgent %q, got %q", dump.DefaultUserAgent, cfg.UserAgent)
 	}
 }
 
@@ -148,25 +150,25 @@ func TestFetchAndConvert(t *testing.T) {
 	tests := []struct {
 		name    string
 		url     string
-		cfg     Config
+		cfg     dump.Config
 		wantErr bool
 	}{
 		{
 			name:    "invalid URL",
 			url:     "not-a-url",
-			cfg:     DefaultConfig(),
+			cfg:     dump.DefaultConfig(),
 			wantErr: true,
 		},
 		{
 			name:    "unsupported scheme",
 			url:     "ftp://example.com",
-			cfg:     DefaultConfig(),
+			cfg:     dump.DefaultConfig(),
 			wantErr: true,
 		},
 		{
 			name:    "valid URL with default config",
 			url:     "https://example.com",
-			cfg:     DefaultConfig(),
+			cfg:     dump.DefaultConfig(),
 			wantErr: false, // URL is valid, network error is expected but not tested here
 		},
 	}
@@ -177,9 +179,9 @@ func TestFetchAndConvert(t *testing.T) {
 
 			ctx := context.Background()
 
-			_, err := FetchAndConvert(ctx, tt.url, tt.cfg)
+			_, err := dump.FetchAndConvert(ctx, tt.url, tt.cfg)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("FetchAndConvert() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("dump.FetchAndConvert() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -188,14 +190,14 @@ func TestFetchAndConvert(t *testing.T) {
 func TestFetchAndConvert_WithCustomConfig(t *testing.T) {
 	t.Parallel()
 
-	cfg := Config{
+	cfg := dump.Config{
 		Timeout:   5 * time.Second,
 		UserAgent: "custom-agent/1.0",
 	}
 
 	ctx := context.Background()
 
-	_, err := FetchAndConvert(ctx, "invalid-url", cfg)
+	_, err := dump.FetchAndConvert(ctx, "invalid-url", cfg)
 	if err == nil {
 		t.Error("Expected error for invalid URL")
 	}
@@ -204,13 +206,13 @@ func TestFetchAndConvert_WithCustomConfig(t *testing.T) {
 func TestConvert_EmptyHTML(t *testing.T) {
 	t.Parallel()
 
-	got, err := Convert("")
+	got, err := dump.Convert("")
 	if err != nil {
-		t.Errorf("Convert() error = %v", err)
+		t.Errorf("dump.Convert() error = %v", err)
 	}
 
 	if got != "" {
-		t.Errorf("Convert() = %q, want empty string", got)
+		t.Errorf("dump.Convert() = %q, want empty string", got)
 	}
 }
 
@@ -219,26 +221,26 @@ func TestConvert_ComplexHTML(t *testing.T) {
 
 	html := `<html><head><title>Test</title></head><body><h1>Heading</h1><p>Paragraph</p></body></html>`
 
-	got, err := Convert(html)
+	got, err := dump.Convert(html)
 	if err != nil {
-		t.Errorf("Convert() error = %v", err)
+		t.Errorf("dump.Convert() error = %v", err)
 	}
 
 	if got == "" {
-		t.Error("Convert() returned empty string for valid HTML")
+		t.Error("dump.Convert() returned empty string for valid HTML")
 	}
 }
 
 func TestValidateURL_MissingHost(t *testing.T) {
 	t.Parallel()
 
-	_, err := ValidateURL("http://")
+	_, err := dump.ValidateURL("http://")
 	if err == nil {
 		t.Error("Expected error for URL without host")
 	}
 
-	if !errors.Is(err, ErrInvalidURL) {
-		t.Errorf("Expected ErrInvalidURL, got %v", err)
+	if !errors.Is(err, dump.ErrInvalidURL) {
+		t.Errorf("Expected dump.ErrInvalidURL, got %v", err)
 	}
 }
 
@@ -259,13 +261,13 @@ func TestValidateURL_ValidURLs(t *testing.T) {
 		t.Run(url, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := ValidateURL(url)
+			parsed, err := dump.ValidateURL(url)
 			if err != nil {
-				t.Errorf("ValidateURL(%q) error = %v", url, err)
+				t.Errorf("dump.ValidateURL(%q) error = %v", url, err)
 			}
 
 			if parsed == nil {
-				t.Errorf("ValidateURL(%q) returned nil parsed URL", url)
+				t.Errorf("dump.ValidateURL(%q) returned nil parsed URL", url)
 			}
 		})
 	}
@@ -274,19 +276,19 @@ func TestValidateURL_ValidURLs(t *testing.T) {
 func TestConstants(t *testing.T) {
 	t.Parallel()
 
-	if DefaultTimeout != 30*time.Second {
-		t.Errorf("Expected DefaultTimeout 30s, got %v", DefaultTimeout)
+	if dump.DefaultTimeout != 30*time.Second {
+		t.Errorf("Expected dump.DefaultTimeout 30s, got %v", dump.DefaultTimeout)
 	}
 
-	if DefaultUserAgent != "page-dump/1.0" {
-		t.Errorf("Expected DefaultUserAgent 'page-dump/1.0', got %q", DefaultUserAgent)
+	if dump.DefaultUserAgent != "page-dump/1.0" {
+		t.Errorf("Expected dump.DefaultUserAgent 'page-dump/1.0', got %q", dump.DefaultUserAgent)
 	}
 
-	if MaxRedirects != 10 {
-		t.Errorf("Expected MaxRedirects 10, got %d", MaxRedirects)
+	if dump.MaxRedirects != 10 {
+		t.Errorf("Expected MaxRedirects 10, got %d", dump.MaxRedirects)
 	}
 
-	if HTTPErrorThreshold != 400 {
-		t.Errorf("Expected HTTPErrorThreshold 400, got %d", HTTPErrorThreshold)
+	if dump.HTTPErrorThreshold != 400 {
+		t.Errorf("Expected HTTPErrorThreshold 400, got %d", dump.HTTPErrorThreshold)
 	}
 }

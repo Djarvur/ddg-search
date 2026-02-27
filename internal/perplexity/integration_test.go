@@ -1,3 +1,4 @@
+//nolint:testpackage // Tests need access to unexported fields
 package perplexity
 
 import (
@@ -20,14 +21,14 @@ func TestSearchIntegration(t *testing.T) {
 		t.Skip("INTEGRATION_TEST not set to 'true', skipping integration test")
 	}
 
-	client := NewClient(apiKey, DefaultRetryOptions())
+	client := NewClient(apiKey)
 	ctx := context.Background()
 
 	// Test successful search
 	t.Run("successful search", func(t *testing.T) {
 		t.Parallel()
 
-		results, err := client.Search(ctx, "What is Go programming language?", 5, "sonar-medium-online")
+		results, err := client.Search(ctx, "What is Go programming language?", "sonar-medium-online")
 		if err != nil {
 			t.Fatalf("Search failed: %v", err)
 		}
@@ -61,9 +62,9 @@ func TestSearchIntegration(t *testing.T) {
 		t.Run("invalid API key", func(t *testing.T) {
 			t.Parallel()
 
-			invalidClient := NewClient("invalid-key", DefaultRetryOptions())
+			invalidClient := NewClient("invalid-key")
 
-			_, err := invalidClient.Search(ctx, "test query", 5, "sonar-medium-online")
+			_, err := invalidClient.Search(ctx, "test query", "sonar-medium-online")
 			if err == nil {
 				t.Error("Expected error with invalid API key")
 			}
@@ -73,7 +74,7 @@ func TestSearchIntegration(t *testing.T) {
 		t.Run("empty query", func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.Search(ctx, "", 5, "sonar-medium-online")
+			_, err := client.Search(ctx, "", "sonar-medium-online")
 			if err == nil {
 				t.Error("Expected error with empty query")
 			}
@@ -93,7 +94,7 @@ func TestSearchIntegration(t *testing.T) {
 			t.Run(model, func(t *testing.T) {
 				t.Parallel()
 
-				results, err := client.Search(ctx, "What is golang?", 3, model)
+				results, err := client.Search(ctx, "What is golang?", model)
 				if err != nil {
 					t.Logf("Warning: Model %s failed: %v", model, err)
 					// Don't fail the test, as some models may not be available

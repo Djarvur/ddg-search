@@ -1,29 +1,31 @@
-package config
+package config_test
 
 import (
 	"testing"
 	"time"
+
+	"github.com/Djarvur/ddg-search/internal/config"
 )
 
 func TestDefaultRetryOptions(t *testing.T) {
 	t.Parallel()
 
-	opts := DefaultRetryOptions()
+	opts := config.DefaultRetryOptions()
 
-	if opts.MaxRetries != DefaultMaxRetries {
-		t.Errorf("Expected MaxRetries %d, got %d", DefaultMaxRetries, opts.MaxRetries)
+	if opts.MaxRetries != config.DefaultMaxRetries {
+		t.Errorf("Expected MaxRetries %d, got %d", config.DefaultMaxRetries, opts.MaxRetries)
 	}
 
 	if opts.BaseDelay != 1*time.Second {
 		t.Errorf("Expected BaseDelay 1s, got %v", opts.BaseDelay)
 	}
 
-	if opts.MaxDelay != DefaultMaxDelaySecs*time.Second {
-		t.Errorf("Expected MaxDelay %ds, got %v", DefaultMaxDelaySecs, opts.MaxDelay)
+	if opts.MaxDelay != config.DefaultMaxDelaySecs*time.Second {
+		t.Errorf("Expected MaxDelay %ds, got %v", config.DefaultMaxDelaySecs, opts.MaxDelay)
 	}
 
-	if opts.BackoffMultiplier != DefaultBackoffMult {
-		t.Errorf("Expected BackoffMultiplier %f, got %f", DefaultBackoffMult, opts.BackoffMultiplier)
+	if opts.BackoffMultiplier != config.DefaultBackoffMult {
+		t.Errorf("Expected BackoffMultiplier %f, got %f", config.DefaultBackoffMult, opts.BackoffMultiplier)
 	}
 
 	if opts.Debug != false {
@@ -34,7 +36,7 @@ func TestDefaultRetryOptions(t *testing.T) {
 func TestSearchOptions(t *testing.T) {
 	t.Parallel()
 
-	opts := SearchOptions{
+	opts := config.SearchOptions{
 		Query:      "test query",
 		MaxResults: 10,
 		Site:       "example.com",
@@ -71,7 +73,7 @@ func TestSearchOptions(t *testing.T) {
 func TestSearchOptions_ZeroValues(t *testing.T) {
 	t.Parallel()
 
-	opts := SearchOptions{}
+	opts := config.SearchOptions{}
 
 	if opts.Query != "" {
 		t.Errorf("Expected Query empty, got %q", opts.Query)
@@ -101,7 +103,7 @@ func TestSearchOptions_ZeroValues(t *testing.T) {
 func TestRetryOptions(t *testing.T) {
 	t.Parallel()
 
-	opts := RetryOptions{
+	opts := config.RetryOptions{
 		MaxRetries:        5,
 		BaseDelay:         2 * time.Second,
 		MaxDelay:          60 * time.Second,
@@ -133,7 +135,7 @@ func TestRetryOptions(t *testing.T) {
 func TestResult(t *testing.T) {
 	t.Parallel()
 
-	result := Result{
+	result := config.Result{
 		Title:   "Test Title",
 		URL:     "https://example.com",
 		Snippet: "Test snippet",
@@ -155,15 +157,15 @@ func TestResult(t *testing.T) {
 func TestConstants(t *testing.T) {
 	t.Parallel()
 
-	if DefaultMaxRetries != 3 {
-		t.Errorf("Expected DefaultMaxRetries 3, got %d", DefaultMaxRetries)
+	if config.DefaultMaxRetries != 3 {
+		t.Errorf("Expected DefaultMaxRetries 3, got %d", config.DefaultMaxRetries)
 	}
 
-	if DefaultMaxDelaySecs != 30 {
-		t.Errorf("Expected DefaultMaxDelaySecs 30, got %d", DefaultMaxDelaySecs)
+	if config.DefaultMaxDelaySecs != 30 {
+		t.Errorf("Expected DefaultMaxDelaySecs 30, got %d", config.DefaultMaxDelaySecs)
 	}
 
-	if DefaultBackoffMult != 2.0 {
-		t.Errorf("Expected DefaultBackoffMult 2.0, got %f", DefaultBackoffMult)
+	if config.DefaultBackoffMult != 2.0 {
+		t.Errorf("Expected DefaultBackoffMult 2.0, got %f", config.DefaultBackoffMult)
 	}
 }

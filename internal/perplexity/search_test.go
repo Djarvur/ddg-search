@@ -1,3 +1,4 @@
+//nolint:testpackage
 package perplexity
 
 import (
@@ -8,17 +9,12 @@ func TestSearchOptions(t *testing.T) {
 	t.Parallel()
 
 	opts := SearchOptions{
-		Query:      "test query",
-		MaxResults: 5,
-		Model:      "sonar-medium-online",
+		Query: "test query",
+		Model: "sonar-medium-online",
 	}
 
 	if opts.Query != "test query" {
 		t.Errorf("Expected Query 'test query', got %q", opts.Query)
-	}
-
-	if opts.MaxResults != 5 {
-		t.Errorf("Expected MaxResults 5, got %d", opts.MaxResults)
 	}
 
 	if opts.Model != "sonar-medium-online" {
@@ -33,10 +29,6 @@ func TestSearchOptions_ZeroValues(t *testing.T) {
 
 	if opts.Query != "" {
 		t.Errorf("Expected Query empty, got %q", opts.Query)
-	}
-
-	if opts.MaxResults != 0 {
-		t.Errorf("Expected MaxResults 0, got %d", opts.MaxResults)
 	}
 
 	if opts.Model != "" {
@@ -242,7 +234,12 @@ func TestSearchResults_Markdown_MultipleCitations(t *testing.T) {
 
 	got := results.Markdown()
 
-	expected := "Multiple citations answer.\n\n## Sources\n\n1. https://example.com/1\n2. https://example.com/2\n3. https://example.com/3\n4. https://example.com/4\n5. https://example.com/5\n"
+	expected := "Multiple citations answer.\n\n## Sources\n\n" +
+		"1. https://example.com/1\n" +
+		"2. https://example.com/2\n" +
+		"3. https://example.com/3\n" +
+		"4. https://example.com/4\n" +
+		"5. https://example.com/5\n"
 	if got != expected {
 		t.Errorf("Markdown() = %q, want %q", got, expected)
 	}
