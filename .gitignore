@@ -40,3 +40,6 @@ go.work.sum
 .roo/
 
 draft.txt
+
+/bin
+/ddg-search-mcp
