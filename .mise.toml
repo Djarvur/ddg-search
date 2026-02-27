@@ -14,7 +14,7 @@ GOLANGCI_VERSION = "v2.9.0"
 # Task definitions
 [tasks.lint]
 description = "Run golangci-lint with auto-fix"
-run = "golangci-lint run --fix ./..."
+run = "golangci-lint run --new-from-merge-base main --whole-files --fix ./..."
 
 [tasks.test]
 description = "Run all Go tests with coverage and race detector"
