@@ -10,8 +10,8 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.6.2
 	golang.org/x/sync v0.18.0
+	github.com/urfave/cli/v3 v3.7.0
 )
 
 require (
