@@ -31,11 +31,3 @@ linters:
       - linters:
           - errcheck
         text: 'Error return value of `.*Close` is not checked'
-      # Allow longer lines in test files
-      - linters:
-          - lll
-        path: _test\.go
-      # Test files don't need separate package
-      - linters:
-          - testpackage
-        path: _test\.go

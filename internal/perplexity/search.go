@@ -11,19 +11,17 @@ import (
 type SearchOptions struct {
 	// Query is the search string.
 	Query string
-	// MaxResults limits the number of results returned.
-	MaxResults int
 	// Model specifies the Perplexity model to use.
 	Model string
 }
 
 // Search performs a web search using the Perplexity API.
-func (c *Client) Search(ctx context.Context, query string, _ int, model string) (*SearchResults, error) {
+func (c *Client) Search(ctx context.Context, query string, model string) (*SearchResults, error) {
 	if query == "" {
 		return nil, ErrQueryEmpty
 	}
 
-	// Build request body
+	// Build request body for Perplexity Chat Completions API
 	reqBody := map[string]any{
 		"model": model,
 		"messages": []map[string]string{
@@ -32,16 +30,13 @@ func (c *Client) Search(ctx context.Context, query string, _ int, model string) 
 				"content": query,
 			},
 		},
-		"max_tokens":  maxTokens,
-		"temperature": temperature,
-		"stream":      false,
 	}
 
 	// Make the request
 	resp, err := c.Do(ctx, c.httpClient.R().
 		SetBody(reqBody).
 		SetContext(ctx).
-		SetHeader("Content-Type", "application/json"))
+		SetHeader("Content-Type", "application/json"), "POST")
 	if err != nil {
 		return nil, fmt.Errorf("API request failed: %w", err)
 	}
@@ -59,16 +54,25 @@ func (c *Client) Search(ctx context.Context, query string, _ int, model string) 
 		return nil, fmt.Errorf("%w: %s", ErrAPI, apiResponse.Error.Message)
 	}
 
+	// Check if we have choices
+	if len(apiResponse.Choices) == 0 {
+		return nil, ErrNoChoices
+	}
+
+	// Extract answer and citations from the response
+	answer := apiResponse.Choices[0].Message.Content
+	citations := apiResponse.Citations
+
 	// Convert to SearchResults
 	results := &SearchResults{
 		Query:      query,
-		Answer:     apiResponse.Answer,
-		Citations:  apiResponse.Citations,
-		References: make([]Reference, len(apiResponse.Citations)),
+		Answer:     answer,
+		Citations:  citations,
+		References: make([]Reference, len(citations)),
 	}
 
 	// Create references from citations
-	for i, citation := range apiResponse.Citations {
+	for i, citation := range citations {
 		results.References[i] = Reference{
 			Index: i + 1,
 			URL:   citation,
@@ -78,11 +82,17 @@ func (c *Client) Search(ctx context.Context, query string, _ int, model string) 
 	return results, nil
 }
 
-// APIResponse represents the raw Perplexity API response.
+// APIResponse represents the raw Perplexity Chat Completions API response.
 type APIResponse struct {
-	Answer    string   `json:"answer"`
+	ID        string   `json:"id"`
 	Citations []string `json:"citations"`
-	Error     *struct {
+	Choices   []struct {
+		Message struct {
+			Content string `json:"content"`
+			Role    string `json:"role"`
+		} `json:"message"`
+	} `json:"choices"`
+	Error *struct {
 		Message string `json:"message"`
 		Type    string `json:"type"`
 	} `json:"error"`

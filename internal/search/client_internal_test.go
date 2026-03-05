@@ -109,8 +109,8 @@ func TestIsRateLimited(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// Create a mock response with the given status code
-			// Note: We can't easily mock resty.Response, so we test the logic indirectly
+			// Create a mock response with given status code
+			// Note: We can't easily mock resty.Response, so we test logic indirectly
 			// This is a simplified test
 			status := tt.statusCode
 
