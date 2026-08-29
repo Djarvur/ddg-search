@@ -11,8 +11,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-// version is set at build time via ldflags.
-const version = "dev"
+// version is set at build time via ldflags; it must be a var for the linker to patch it.
+var version = "dev"
 
 // Error for missing URL argument.
 var errNoURL = errors.New("no URL provided")

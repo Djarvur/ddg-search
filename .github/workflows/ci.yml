@@ -75,13 +75,15 @@ jobs:
           go-version: stable
           cache: true
 
-      - name: Build ddg-search
-        run: go build -o bin/ddg-search ./cmd/ddg-search
-
-      - name: Build page-dump
-        run: go build -o bin/page-dump ./cmd/page-dump
+      - name: Build binaries
+        run: |
+          ldflags="-X main.version=${{ github.ref_name }}"
+          go build -ldflags="$ldflags" -o bin/ddg-search ./cmd/ddg-search
+          go build -ldflags="$ldflags" -o bin/page-dump ./cmd/page-dump
+          go build -ldflags="$ldflags" -o bin/perplexity-search ./cmd/perplexity-search
 
       - name: Verify binaries
         run: |
           ./bin/ddg-search --help
           ./bin/page-dump --help
+          ./bin/perplexity-search --help
