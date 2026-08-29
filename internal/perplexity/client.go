@@ -26,12 +26,16 @@ var (
 	ErrQueryEmpty      = errors.New("query cannot be empty")
 	ErrNetwork         = errors.New("network error")
 	ErrAPI             = errors.New("API error")
+	ErrNoChoices       = errors.New("API response contained no choices")
 )
 
 // Internal constants.
 const (
 	jitterMs   = 500
 	apiBaseURL = "https://api.perplexity.ai"
+
+	// chatCompletionsPath is the API path Search posts to, relative to apiBaseURL.
+	chatCompletionsPath = "/chat/completions"
 
 	// Retry configuration constants.
 	defaultMaxRetries     = 3
@@ -77,7 +81,6 @@ func DefaultRetryOptions() RetryOptions {
 // Client wraps the HTTP client with retry logic for Perplexity API.
 type Client struct {
 	httpClient   *resty.Client
-	apiKey       string
 	retryOptions RetryOptions
 	debugWriter  io.Writer
 }
@@ -98,7 +101,6 @@ func NewClient(apiKey string, retryOptions RetryOptions) *Client {
 
 	return &Client{
 		httpClient:   client,
-		apiKey:       apiKey,
 		retryOptions: retryOptions,
 		debugWriter:  debugWriter,
 	}
@@ -106,8 +108,12 @@ func NewClient(apiKey string, retryOptions RetryOptions) *Client {
 
 // Do executes an HTTP request with retry logic.
 //
+// The method and path must be given explicitly: resty resolves an empty method to
+// GET and an empty path to the bare base URL, which would silently send the request
+// to the wrong endpoint.
+//
 //nolint:gocognit // Retry logic requires multiple condition checks
-func (c *Client) Do(ctx context.Context, req *resty.Request) (*resty.Response, error) {
+func (c *Client) Do(ctx context.Context, method, path string, req *resty.Request) (*resty.Response, error) {
 	var (
 		lastErr  error
 		lastResp *resty.Response
@@ -122,7 +128,7 @@ func (c *Client) Do(ctx context.Context, req *resty.Request) (*resty.Response, e
 			return nil, err
 		}
 
-		resp, err := req.SetContext(ctx).Send()
+		resp, err := req.SetContext(ctx).Execute(method, path)
 		if err != nil {
 			c.debugf("attempt %d: request error: %v", attempt+1, err)
 
@@ -272,7 +278,7 @@ func (c *Client) calculateDelay(attempt int) time.Duration {
 
 // randomJitter generates a random jitter duration using crypto/rand.
 //
-//nolint:gosec // Modulo operation is safe for small positive values
+
 func randomJitter() (time.Duration, error) {
 	var buf [8]byte
 
