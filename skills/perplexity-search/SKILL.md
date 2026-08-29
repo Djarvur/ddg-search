@@ -14,22 +14,22 @@ go install github.com/Djarvur/ddg-search/cmd/perplexity-search@latest
 
 ### Configure API Key
 
-Create a `.env` file in your project directory or set the environment variable:
+Export the API key in your shell environment:
 
 ```bash
-# In .env file
-PERPLEXITY_API_KEY="your-api-key-here"
-
-# Or set in your shell
 export PERPLEXITY_API_KEY="your-api-key-here"
 ```
+
+The binary reads the key from the environment only; it does not load `.env`
+files itself. To keep the key in a `.env` file, source it first
+(`set -a; . ./.env; set +a`) or use a runner such as `direnv` or `dotenv`.
 
 ### Get a Perplexity API Key
 
 1. Visit https://www.perplexity.ai/settings/api
 2. Sign up or log in to your Perplexity account
 3. Generate a new API key
-4. Copy the key and add it to your `.env` file or set it as an environment variable
+4. Copy the key and export it as `PERPLEXITY_API_KEY`
 
 ### Verify installation
 
@@ -51,25 +51,28 @@ Search the web using Perplexity API for high-quality, AI-powered search results 
 
 **Parameters:**
 - `query` (required): The search query string
-- `max-results` (optional): Maximum number of results to return (default: 5)
-- `model` (optional): Perplexity model to use (default: sonar-medium-online)
+- `max-results` (optional): Maximum number of sources listed with the answer (default: 5)
+- `model` (optional): Perplexity model to use (default: sonar)
 
 **Usage:**
 ```
 perplexity-search "golang http client best practices"
 ```
 
-**Output:** AI-generated answer with citations to sources.
+**Output:** AI-generated answer, followed by a `## Sources` list of the
+sources it was grounded in.
 
 **Options:**
-- `--max-results int`: Maximum number of results (default: 5)
-- `--model string`: Perplexity model to use (default: sonar-medium-online)
+- `--max-results int`: Maximum number of sources listed with the answer (default: 5)
+- `--model string`: Perplexity model to use (default: sonar)
 - `--debug`: Enable debug logging to stderr
 
 **Available Models:**
-- `sonar-medium-online`: Balanced performance and quality (default)
-- `sonar-small-online`: Faster, lower cost
-- `sonar-pro-online`: Higher quality, more expensive
+- `sonar`: Fast and low cost (default)
+- `sonar-pro`: Higher quality, more expensive
+- `sonar-reasoning`: Adds a reasoning pass
+- `sonar-reasoning-pro`: Higher-quality reasoning
+- `sonar-deep-research`: Long-running, exhaustive research
 
 ## Usage Examples
 
@@ -78,14 +81,14 @@ perplexity-search "golang http client best practices"
 perplexity-search "rust async programming guide"
 ```
 
-### Search with custom max results
+### Limit the number of sources listed
 ```
 perplexity-search --max-results 10 "docker compose best practices"
 ```
 
 ### Search with specific model
 ```
-perplexity-search --model sonar-pro-online "machine learning fundamentals"
+perplexity-search --model sonar-pro "machine learning fundamentals"
 ```
 
 ### Search with debug mode
@@ -102,11 +105,11 @@ The binary is not in your PATH. Ensure `$(go env GOPATH)/bin` is in your PATH:
 export PATH="$PATH:$(go env GOPATH)/bin"
 ```
 
-### "PERPLEXITY_API_KEY environment variable not set"
+### "PERPLEXITY_API_KEY is not set"
 
-You need to configure your Perplexity API key. Either:
-1. Create a `.env` file with `PERPLEXITY_API_KEY="your-key"`
-2. Set the environment variable: `export PERPLEXITY_API_KEY="your-key"`
+Export the key in the shell that runs the binary:
+`export PERPLEXITY_API_KEY="your-key"`. A `.env` file is not read
+automatically -- source it first if that is where you keep the key.
 
 ### "invalid API key"
 

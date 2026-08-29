@@ -43,14 +43,19 @@ Search the web using Perplexity API with AI-powered results and citations (requi
 
 - AI-powered search results with better understanding
 - Citations to sources referenced in results
-- Configurable model selection (sonar-small-online, sonar-medium-online, sonar-pro-online)
+- Configurable model selection (sonar, sonar-pro, sonar-reasoning, ...)
 - Automatic retry with exponential backoff for transient errors
 - Markdown output for LLM consumption
 
 ## Installation
 
+`go install` needs the path of each command's `main` package, so install the
+tools individually:
+
 ```bash
-go install github.com/Djarvur/ddg-search@latest
+go install github.com/Djarvur/ddg-search/cmd/ddg-search@latest
+go install github.com/Djarvur/ddg-search/cmd/page-dump@latest
+go install github.com/Djarvur/ddg-search/cmd/perplexity-search@latest
 ```
 
 Or build from source:
@@ -58,7 +63,9 @@ Or build from source:
 ```bash
 git clone https://github.com/Djarvur/ddg-search
 cd ddg-search
-make build
+go build -o bin/ddg-search ./cmd/ddg-search
+go build -o bin/page-dump ./cmd/page-dump
+go build -o bin/perplexity-search ./cmd/perplexity-search
 ```
 
 ## Usage
@@ -154,18 +161,18 @@ Go is an open source programming language that makes it easy to build simple, re
 
 ## Sources
 
-1. https://go.dev/
-2. https://en.wikipedia.org/wiki/Go_(programming_language)
+1. [The Go Programming Language](https://go.dev/)
+2. [Go (programming language) - Wikipedia](https://en.wikipedia.org/wiki/Go_(programming_language))
 ```
 
 #### perplexity-search Examples
 
 ```bash
-# Limit results
+# Limit the number of sources listed under the answer
 perplexity-search --max-results 3 golang tutorial
 
 # Use a specific model
-perplexity-search --model sonar-pro-online "machine learning fundamentals"
+perplexity-search --model sonar-pro "machine learning fundamentals"
 
 # Debug mode
 perplexity-search --debug "kubernetes deployment strategies"
@@ -175,17 +182,19 @@ perplexity-search --debug "kubernetes deployment strategies"
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--max-results` | Maximum number of results to return | 5 |
-| `--model` | Perplexity model to use | sonar-medium-online |
+| `--max-results` | Maximum number of sources listed with the answer | 5 |
+| `--model` | Perplexity model to use | sonar |
 | `--debug` | Enable debug logging to stderr | false |
 
 #### perplexity-search Models
 
 | Model | Description |
 |-------|-------------|
-| `sonar-small-online` | Faster, lower cost |
-| `sonar-medium-online` | Balanced performance and quality |
-| `sonar-pro-online` | Higher quality, more expensive |
+| `sonar` | Fast and low cost (default) |
+| `sonar-pro` | Higher quality, more expensive |
+| `sonar-reasoning` | Adds a reasoning pass |
+| `sonar-reasoning-pro` | Higher-quality reasoning |
+| `sonar-deep-research` | Long-running, exhaustive research |
 
 #### API Key Setup
 
@@ -196,10 +205,9 @@ Set it via environment variable:
 export PERPLEXITY_API_KEY="your-api-key"
 ```
 
-Or add to `.env` file:
-```bash
-PERPLEXITY_API_KEY="your-api-key"
-```
+`perplexity-search` reads the key from the environment only -- it does not load
+`.env` files itself. To keep the key in a `.env` file, source it first
+(`set -a; . ./.env; set +a`) or use a runner such as `direnv`.
 
 #### ddg-search vs perplexity-search
 
