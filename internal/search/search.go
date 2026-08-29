@@ -107,10 +107,10 @@ func (s *Searcher) SearchMarkdown(ctx context.Context, opts config.SearchOptions
 
 	var sb strings.Builder
 	for i, r := range results {
-		sb.WriteString(fmt.Sprintf("%d. [%s](%s)\n", i+1, r.Title, r.URL))
+		fmt.Fprintf(&sb, "%d. [%s](%s)\n", i+1, r.Title, r.URL)
 
 		if r.Snippet != "" {
-			sb.WriteString(fmt.Sprintf("   %s\n", r.Snippet))
+			fmt.Fprintf(&sb, "   %s\n", r.Snippet)
 		}
 	}
 

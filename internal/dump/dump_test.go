@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// testDumpURL is the placeholder URL shared across the tests in this file.
+const testDumpURL = "https://example.com"
+
 func TestValidateURL(t *testing.T) {
 	t.Parallel()
 
@@ -22,7 +25,7 @@ func TestValidateURL(t *testing.T) {
 		},
 		{
 			name:    "valid HTTPS URL",
-			url:     "https://example.com",
+			url:     testDumpURL,
 			wantErr: nil,
 		},
 		{
@@ -165,7 +168,7 @@ func TestFetchAndConvert(t *testing.T) {
 		},
 		{
 			name:    "valid URL with default config",
-			url:     "https://example.com",
+			url:     testDumpURL,
 			cfg:     DefaultConfig(),
 			wantErr: false, // URL is valid, network error is expected but not tested here
 		},
@@ -247,7 +250,7 @@ func TestValidateURL_ValidURLs(t *testing.T) {
 
 	validURLs := []string{
 		"http://example.com",
-		"https://example.com",
+		testDumpURL,
 		"https://example.com/path",
 		"https://example.com/path?query=value",
 		"https://example.com:8080/path",

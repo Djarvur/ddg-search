@@ -13,6 +13,9 @@ import (
 	"github.com/Djarvur/ddg-search/internal/config"
 )
 
+// testQuery is the placeholder query shared across the tests in this file.
+const testQuery = "test query"
+
 func TestSearchIntegrationBasic(t *testing.T) {
 	t.Parallel()
 
@@ -46,7 +49,7 @@ func TestSearchIntegrationBasic(t *testing.T) {
 	}
 
 	searchOpts := config.SearchOptions{
-		Query:      "test query",
+		Query:      testQuery,
 		MaxResults: 10,
 	}
 
@@ -147,7 +150,7 @@ func TestSearchIntegrationMaxResults(t *testing.T) {
 	}
 
 	searchOpts := config.SearchOptions{
-		Query:      "test query",
+		Query:      testQuery,
 		MaxResults: 2, // Request only 2 results
 	}
 
@@ -202,7 +205,7 @@ func TestSearchIntegrationRetryOn500(t *testing.T) {
 	}
 
 	searchOpts := config.SearchOptions{
-		Query:      "test query",
+		Query:      testQuery,
 		MaxResults: 10,
 	}
 
@@ -252,7 +255,7 @@ func TestSearchMarkdown(t *testing.T) {
 	}
 
 	searchOpts := config.SearchOptions{
-		Query:      "test query",
+		Query:      testQuery,
 		MaxResults: 10,
 	}
 
@@ -304,7 +307,7 @@ func TestSearchJSON(t *testing.T) {
 	}
 
 	searchOpts := config.SearchOptions{
-		Query:      "test query",
+		Query:      testQuery,
 		MaxResults: 10,
 	}
 
