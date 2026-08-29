@@ -34,9 +34,9 @@ go build -o bin/perplexity-search ./cmd/perplexity-search
 govulncheck ./...
 ```
 
-Tooling versions come from `.mise.toml` — golangci-lint is pinned to `GOLANGCI_VERSION` (v2.9.0) and installed via `go install`, isolated from any system-wide golangci-lint. Keep that pin and the version in `.github/workflows/ci.yml` in sync.
+Tooling versions come from `.mise.toml` — golangci-lint is pinned to `GOLANGCI_VERSION` (v2.13.2) and installed via `go install`, isolated from any system-wide golangci-lint. Keep that pin and the version in `.github/workflows/ci.yml` in sync.
 
-Note: `README.md` says `make build`, but there is no Makefile — use the `go build` commands above.
+Note: there is no Makefile — use the `go build` commands above.
 
 ### Tests that talk to the network
 
@@ -58,15 +58,21 @@ Three independent CLI binaries under `cmd/`, each a thin `urfave/cli/v3` wrapper
 
 Jitter also differs on purpose: `search` uses `math/rand` (with a `//nolint:gosec`), `perplexity` uses `crypto/rand`.
 
+### `perplexity.Client.Do` needs an explicit method and path
+
+Pass both to `Do`; never build a request and rely on resty's `Send()`. `Send()` calls `Execute(r.Method, r.URL)`, and with those empty resty joins the empty path onto the base URL while Go's `http.NewRequest` defaults an empty method to `GET` — the request silently becomes `GET https://api.perplexity.ai/` instead of `POST /chat/completions`, and since `checkAPIError` has no 404 case the wrong response parses as a valid one. That was a live bug until it was fixed; `TestSearchSendsPostToChatCompletions` guards it.
+
+The answer lives at `choices[0].message.content` (guarded by `ErrNoChoices`), and sources come from `search_results`, falling back to the deprecated top-level `citations` array.
+
 ### Retry nesting on the DuckDuckGo path (a real gotcha)
 
 `Searcher.Search` ([search.go:41](internal/search/search.go#L41)) loops up to `MaxRetries+1` times, and each attempt calls `Client.Do` ([client.go:76](internal/search/client.go#L76)), which itself loops up to `MaxRetries+1` times. The retry counts multiply: with the default `--max-retries 3`, a persistently rate-limited query can issue up to 16 HTTP requests. `Client.Do` signals exhaustion with `ErrMaxRetries`, and the outer loop treats only that error as retryable — every other error returns immediately. Keep that contract if you touch either loop.
 
 ### Rate-limit detection in HTML is switched off
 
-`Parser.FindRateLimitIndicator` ([parser.go:109](internal/search/parser.go#L109)) ignores its argument and always returns `""`, disabling the outer loop's HTML-body check. This is deliberate: the indicator words ("captcha", "blocked", "anomaly", …) produced false positives when they appeared in legitimate result snippets. `Parser.IsRateLimitPage` and `Parser.IsEmptyResults` still hold that logic but are not wired into the search flow. Re-enabling this needs a snippet-safe heuristic, not just un-stubbing the function.
+`Parser.FindRateLimitIndicator` ([parser.go:65](internal/search/parser.go#L65)) ignores its argument and always returns `""`, disabling the outer loop's HTML-body check. This is deliberate: the indicator words ("captcha", "blocked", "anomaly", …) produced false positives when they appeared in legitimate result snippets. The keyword-scanning helpers that used to hold this logic (`Parser.IsRateLimitPage`, `Parser.IsEmptyResults`) were dead and have been removed; rate limiting is detected from the HTTP status alone. Re-enabling body-text detection needs a snippet-safe heuristic, not just un-stubbing the function.
 
-DuckDuckGo results are read from `.result__a` anchors, and hrefs are unwrapped from DDG's `//duckduckgo.com/l/?uddg=…` redirect form by `Parser.extractURL`.
+DuckDuckGo results are read from `.result__a` anchors, and hrefs are unwrapped from DDG's `//duckduckgo.com/l/?uddg=…` redirect form by `Parser.extractURL`. That unwrap must not decode the value it gets from `url.Values.Get` — it is already percent-decoded, and decoding twice corrupts any target URL containing `%xx` or `+`.
 
 ### Skills
 
