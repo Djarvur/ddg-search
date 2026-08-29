@@ -59,50 +59,6 @@ func (p *Parser) Parse(html string, maxResults int) ([]config.Result, error) {
 	return results, nil
 }
 
-// IsEmptyResults checks if the response indicates no results (potential rate limiting).
-func (p *Parser) IsEmptyResults(html string) bool {
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
-	if err != nil {
-		return true
-	}
-
-	// Check for "No results" message
-	noResults := doc.Find(".no-results")
-
-	return noResults.Length() > 0
-}
-
-// IsRateLimitPage checks if the response is a rate limit/captcha page.
-func (p *Parser) IsRateLimitPage(html string) bool {
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
-	if err != nil {
-		return false
-	}
-
-	// Check for captcha or rate limit indicators
-	body := doc.Find("body").Text()
-	lowerBody := strings.ToLower(body)
-
-	indicators := []string{
-		"captcha",
-		"rate limit",
-		"too many requests",
-		"blocked",
-		"automated",
-		"bots use duckduckgo",
-		"challenge",
-		"anomaly",
-	}
-
-	for _, indicator := range indicators {
-		if strings.Contains(lowerBody, indicator) {
-			return true
-		}
-	}
-
-	return false
-}
-
 // FindRateLimitIndicator returns the first rate limit indicator found in the HTML.
 // Returns empty string if no indicator is found or if search results exist (not a rate limit page).
 // Currently disabled due to false positives when indicator words appear in search result snippets.
@@ -130,15 +86,12 @@ func (p *Parser) extractURL(redirectURL string) string {
 		u.Host = "duckduckgo.com"
 	}
 
+	// Values returns the already percent-decoded value; decoding it a second
+	// time would corrupt any target URL whose own form still contains %xx or +.
 	uddg := u.Query().Get("uddg")
 	if uddg == "" {
 		return redirectURL
 	}
 
-	decoded, err := url.QueryUnescape(uddg)
-	if err != nil {
-		return uddg
-	}
-
-	return decoded
+	return uddg
 }

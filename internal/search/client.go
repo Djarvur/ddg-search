@@ -69,7 +69,7 @@ func isRateLimited(resp *resty.Response, err error) bool {
 	// 202 Accepted is sometimes used by DDG to indicate rate limiting
 	// 429 Too Many Requests is standard rate limit response
 	// 5xx server errors are retryable
-	return status == http.StatusAccepted || status == http.StatusTooManyRequests || status >= 500
+	return status == http.StatusAccepted || status == http.StatusTooManyRequests || status >= http5xxThreshold
 }
 
 // Do executes an HTTP request with retry logic.
