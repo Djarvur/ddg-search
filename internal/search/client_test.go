@@ -10,7 +10,11 @@ import (
 	"time"
 
 	"github.com/Djarvur/ddg-search/internal/config"
+	"github.com/go-resty/resty/v2"
 )
+
+// errTestTransport stands in for a transport-level failure in isRateLimited tests.
+var errTestTransport = errors.New("transport failure")
 
 func TestClientCalculateDelay(t *testing.T) {
 	t.Parallel()
@@ -93,32 +97,79 @@ func TestIsRateLimited(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		statusCode int
-		want       bool
+		name   string
+		status int
+		err    error
+		want   bool
 	}{
-		{"200 OK", 200, false},
-		{"429 Too Many Requests", 429, true},
-		{"500 Internal Server Error", 500, true},
-		{"502 Bad Gateway", 502, true},
-		{"503 Service Unavailable", 503, true},
-		{"404 Not Found", 404, false},
+		{"200 OK", http.StatusOK, nil, false},
+		{"202 Accepted is DuckDuckGo's rate-limit signal", http.StatusAccepted, nil, true},
+		{"429 Too Many Requests", http.StatusTooManyRequests, nil, true},
+		{"500 Internal Server Error", http.StatusInternalServerError, nil, true},
+		{"502 Bad Gateway", http.StatusBadGateway, nil, true},
+		{"503 Service Unavailable", http.StatusServiceUnavailable, nil, true},
+		{"404 Not Found", http.StatusNotFound, nil, false},
+		{"transport error is retryable", 0, errTestTransport, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// Create a mock response with the given status code
-			// Note: We can't easily mock resty.Response, so we test the logic indirectly
-			// This is a simplified test
-			status := tt.statusCode
+			var resp *resty.Response
+			if tt.status > 0 {
+				resp = &resty.Response{}
+				resp.RawResponse = &http.Response{StatusCode: tt.status}
+			}
 
-			got := status == 429 || status >= 500
-			if got != tt.want {
-				t.Errorf("rate limit check for status %d = %v, want %v", tt.statusCode, got, tt.want)
+			if got := isRateLimited(resp, tt.err); got != tt.want {
+				t.Errorf("isRateLimited() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+// TestClientDoRetryOn202 covers the DuckDuckGo-specific signal: 202 is an
+// ordinary success status elsewhere, so only Client.Do treats it as retryable.
+func TestClientDoRetryOn202(t *testing.T) {
+	t.Parallel()
+
+	var requestCount atomic.Int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		count := requestCount.Add(1)
+		if count < 3 {
+			w.WriteHeader(http.StatusAccepted)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("success"))
+	}))
+	defer server.Close()
+
+	opts := config.RetryOptions{
+		MaxRetries:        3,
+		BaseDelay:         1 * time.Millisecond,
+		MaxDelay:          10 * time.Millisecond,
+		BackoffMultiplier: 2.0,
+	}
+
+	client := NewClientWithBaseURL(opts, server.URL)
+	defer client.Close()
+
+	resp, err := client.Do(context.Background(), client.httpClient.R())
+	if err != nil {
+		t.Fatalf("Do() unexpected error: %v", err)
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		t.Errorf("Do() status = %d, want %d", resp.StatusCode(), http.StatusOK)
+	}
+
+	if got := requestCount.Load(); got != 3 {
+		t.Errorf("expected 3 requests, got %d", got)
 	}
 }
 
