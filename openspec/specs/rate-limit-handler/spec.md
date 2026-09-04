@@ -14,11 +14,19 @@ The system SHALL detect when DuckDuckGo is rate-limiting requests.
 - **WHEN** DuckDuckGo returns HTTP 5xx error
 - **THEN** system recognizes this as a retryable condition
 
-#### Scenario: Empty results from rate limit triggers retry
+#### Scenario: HTTP 202 triggers rate limit handling
 
-- **WHEN** a query that should return results returns empty results
-- **AND** the response indicates rate limiting (e.g., captcha page)
+- **WHEN** DuckDuckGo returns HTTP 202 (Accepted)
 - **THEN** system recognizes this as a rate-limit condition
+
+#### Scenario: Rate limiting is not inferred from page text
+
+- **WHEN** a response body contains words such as "captcha" or "blocked"
+- **THEN** system does NOT treat the response as rate-limited on that basis alone
+- **AND** rate limiting is detected from the HTTP status only
+
+Scanning body text produced false positives when those words appeared in
+legitimate result snippets. Re-enabling it needs a snippet-safe heuristic.
 
 ### Requirement: Automatic retry
 

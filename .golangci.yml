@@ -11,7 +11,8 @@ run:
 linters:
   default: all
   disable:
-    - exhaustruct # too noisy for partial struct initialization
+    - exhaustruct # deprecated, replaced by exhaustruct_v5
+    - exhaustruct_v5 # too noisy for partial struct initialization
     - ireturn # returning interfaces is acceptable
     - varnamelen # short variable names are idiomatic in Go
     - tagliatelle # JSON tags follow external API conventions
@@ -19,6 +20,7 @@ linters:
     - cyclop # cyclomatic complexity covered by other linters
     - depguard # project-internal imports trigger false positives
     - wsl # deprecated, replaced by wsl_v5
+    - gomodguard # deprecated, replaced by gomodguard_v2
   settings:
     gocognit:
       min-complexity: 15

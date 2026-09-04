@@ -27,7 +27,7 @@ func TestSearchIntegration(t *testing.T) {
 	t.Run("successful search", func(t *testing.T) {
 		t.Parallel()
 
-		results, err := client.Search(ctx, "What is Go programming language?", 5, "sonar-medium-online")
+		results, err := client.Search(ctx, "What is Go programming language?", 5, "sonar")
 		if err != nil {
 			t.Fatalf("Search failed: %v", err)
 		}
@@ -63,7 +63,7 @@ func TestSearchIntegration(t *testing.T) {
 
 			invalidClient := NewClient("invalid-key", DefaultRetryOptions())
 
-			_, err := invalidClient.Search(ctx, "test query", 5, "sonar-medium-online")
+			_, err := invalidClient.Search(ctx, "test query", 5, "sonar")
 			if err == nil {
 				t.Error("Expected error with invalid API key")
 			}
@@ -73,7 +73,7 @@ func TestSearchIntegration(t *testing.T) {
 		t.Run("empty query", func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.Search(ctx, "", 5, "sonar-medium-online")
+			_, err := client.Search(ctx, "", 5, "sonar")
 			if err == nil {
 				t.Error("Expected error with empty query")
 			}
@@ -85,8 +85,8 @@ func TestSearchIntegration(t *testing.T) {
 		t.Parallel()
 
 		models := []string{
-			"sonar-medium-online",
-			"sonar-small-online",
+			"sonar",
+			"sonar-pro",
 		}
 
 		for _, model := range models {

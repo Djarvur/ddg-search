@@ -9,8 +9,17 @@ The system SHALL provide a `perplexity-search` CLI command that enables users to
 
 #### Scenario: Successful search
 - **WHEN** a user executes `perplexity-search` with a valid query
-- **THEN** the command sends a request to the Perplexity API
+- **THEN** the command sends a POST request to the Perplexity `/chat/completions` endpoint
+- **AND** the command reads the answer from `choices[0].message.content`
 - **AND** the command outputs search results in markdown format
+
+#### Scenario: Response without choices
+- **WHEN** the API returns a response whose `choices` array is empty
+- **THEN** the command returns an error rather than printing a blank answer
+
+#### Scenario: Multi-word query
+- **WHEN** a user passes a query as several unquoted arguments
+- **THEN** the command joins every argument into a single query string
 
 #### Scenario: Search with no query
 - **WHEN** a user executes `perplexity-search` without a query
@@ -18,7 +27,7 @@ The system SHALL provide a `perplexity-search` CLI command that enables users to
 
 #### Scenario: Missing API key
 - **WHEN** the PERPLEXITY_API_KEY environment variable is not set
-- **THEN** the command returns an error directing the user to configure the API key in .env file
+- **THEN** the command returns an error directing the user to export the API key
 
 #### Scenario: Invalid API key
 - **WHEN** the PERPLEXITY_API_KEY is invalid
@@ -34,7 +43,7 @@ The CLI command SHALL support configurable search options via command-line flags
 
 #### Scenario: Limit results
 - **WHEN** a user provides `--max-results N` flag
-- **THEN** the command returns at most N search results
+- **THEN** the command lists at most N sources alongside the answer
 
 #### Scenario: Specify model
 - **WHEN** a user provides `--model MODEL` flag
@@ -48,13 +57,16 @@ The CLI command SHALL support configurable search options via command-line flags
 
 The system SHALL load the Perplexity API key from the PERPLEXITY_API_KEY environment variable.
 
-#### Scenario: API key from .env
-- **WHEN** a .env file exists with PERPLEXITY_API_KEY set
-- **THEN** the system loads the API key from the environment
+The system SHALL NOT read `.env` files itself; a `.env` file must be sourced into
+the environment by the caller.
 
 #### Scenario: API key from shell environment
 - **WHEN** PERPLEXITY_API_KEY is set in the shell environment
 - **THEN** the system uses that API key value
+
+#### Scenario: API key absent from the environment
+- **WHEN** PERPLEXITY_API_KEY is not set, even if a .env file defines it
+- **THEN** the command returns an error rather than reading the file
 
 ### Requirement: Format output as markdown
 
@@ -62,8 +74,13 @@ The system SHALL format search results as markdown for LLM consumption.
 
 #### Scenario: Result formatting
 - **WHEN** search results are received from the API
-- **THEN** each result is formatted with title, URL, and snippet in markdown
-- **AND** citations are included for sources referenced in the AI-generated content
+- **THEN** the answer is followed by a `## Sources` list
+- **AND** each source is rendered as a markdown link when the API reported a title, and as a bare URL otherwise
+
+#### Scenario: Source list preference
+- **WHEN** the API response carries a `search_results` array
+- **THEN** the sources are taken from it
+- **AND** the deprecated top-level `citations` array is used only when `search_results` is absent
 
 ### Requirement: Handle API errors gracefully
 

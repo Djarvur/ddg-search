@@ -9,9 +9,9 @@ tools:
         description: The search query string
         required: true
       - name: max-results
-        description: Maximum number of results to return (default: 5)
+        description: Maximum number of sources listed with the answer (default: 5)
         required: false
       - name: model
-        description: Perplexity model to use (default: sonar-medium-online)
+        description: Perplexity model to use (default: sonar)
         required: false
     command: perplexity-search --max-results "{{max-results}}" --model "{{model}}" "{{query}}"

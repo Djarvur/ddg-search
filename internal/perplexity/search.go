@@ -4,21 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 )
 
-// SearchOptions configures a Perplexity search query.
-type SearchOptions struct {
-	// Query is the search string.
-	Query string
-	// MaxResults limits the number of results returned.
-	MaxResults int
-	// Model specifies the Perplexity model to use.
-	Model string
-}
-
 // Search performs a web search using the Perplexity API.
-func (c *Client) Search(ctx context.Context, query string, _ int, model string) (*SearchResults, error) {
+//
+// maxResults caps the number of sources reported alongside the answer; a
+// non-positive value keeps every source the API returned.
+func (c *Client) Search(ctx context.Context, query string, maxResults int, model string) (*SearchResults, error) {
 	if query == "" {
 		return nil, ErrQueryEmpty
 	}
@@ -38,9 +32,8 @@ func (c *Client) Search(ctx context.Context, query string, _ int, model string) 
 	}
 
 	// Make the request
-	resp, err := c.Do(ctx, c.httpClient.R().
+	resp, err := c.Do(ctx, http.MethodPost, chatCompletionsPath, c.httpClient.R().
 		SetBody(reqBody).
-		SetContext(ctx).
 		SetHeader("Content-Type", "application/json"))
 	if err != nil {
 		return nil, fmt.Errorf("API request failed: %w", err)
@@ -59,33 +52,50 @@ func (c *Client) Search(ctx context.Context, query string, _ int, model string) 
 		return nil, fmt.Errorf("%w: %s", ErrAPI, apiResponse.Error.Message)
 	}
 
-	// Convert to SearchResults
-	results := &SearchResults{
-		Query:      query,
-		Answer:     apiResponse.Answer,
-		Citations:  apiResponse.Citations,
-		References: make([]Reference, len(apiResponse.Citations)),
+	if len(apiResponse.Choices) == 0 {
+		return nil, ErrNoChoices
 	}
 
-	// Create references from citations
-	for i, citation := range apiResponse.Citations {
-		results.References[i] = Reference{
-			Index: i + 1,
-			URL:   citation,
-		}
-	}
-
-	return results, nil
+	return newSearchResults(query, &apiResponse, maxResults), nil
 }
 
 // APIResponse represents the raw Perplexity API response.
 type APIResponse struct {
-	Answer    string   `json:"answer"`
+	// Choices carries the generated answer; the text lives at
+	// Choices[0].Message.Content.
+	Choices []Choice `json:"choices"`
+	// SearchResults describes the sources behind the answer. It supersedes
+	// Citations, which Perplexity has deprecated.
+	SearchResults []SearchResult `json:"search_results"`
+	// Citations is the deprecated, URL-only form of SearchResults.
 	Citations []string `json:"citations"`
 	Error     *struct {
 		Message string `json:"message"`
 		Type    string `json:"type"`
 	} `json:"error"`
+}
+
+// Choice is a single completion returned by the API.
+type Choice struct {
+	// Message holds the assistant's reply.
+	Message struct {
+		// Role is the author of the message, normally "assistant".
+		Role string `json:"role"`
+		// Content is the generated answer text.
+		Content string `json:"content"`
+	} `json:"message"`
+	// FinishReason explains why generation stopped.
+	FinishReason string `json:"finish_reason"`
+}
+
+// SearchResult is a single source the answer was grounded in.
+type SearchResult struct {
+	// Title is the source's page title.
+	Title string `json:"title"`
+	// URL is the source's address.
+	URL string `json:"url"`
+	// Date is the source's publication date, if the API reported one.
+	Date string `json:"date"`
 }
 
 // SearchResults represents the results of a Perplexity search.
@@ -106,6 +116,51 @@ type Reference struct {
 	Index int
 	// URL is the citation URL.
 	URL string
+	// Title is the source's page title, empty when the API did not report one.
+	Title string
+}
+
+// newSearchResults converts an API response into SearchResults, keeping at most
+// maxResults sources. A non-positive maxResults keeps every source.
+func newSearchResults(query string, resp *APIResponse, maxResults int) *SearchResults {
+	refs := resp.references()
+	if maxResults > 0 && len(refs) > maxResults {
+		refs = refs[:maxResults]
+	}
+
+	citations := make([]string, len(refs))
+
+	for i := range refs {
+		refs[i].Index = i + 1
+		citations[i] = refs[i].URL
+	}
+
+	return &SearchResults{
+		Query:      query,
+		Answer:     resp.Choices[0].Message.Content,
+		Citations:  citations,
+		References: refs,
+	}
+}
+
+// references builds the source list, preferring search_results over the
+// deprecated citations field.
+func (r *APIResponse) references() []Reference {
+	if len(r.SearchResults) > 0 {
+		refs := make([]Reference, len(r.SearchResults))
+		for i, sr := range r.SearchResults {
+			refs[i] = Reference{URL: sr.URL, Title: sr.Title}
+		}
+
+		return refs
+	}
+
+	refs := make([]Reference, len(r.Citations))
+	for i, citation := range r.Citations {
+		refs[i] = Reference{URL: citation}
+	}
+
+	return refs
 }
 
 // Markdown returns the search results formatted as markdown.
@@ -121,7 +176,13 @@ func (r *SearchResults) Markdown() string {
 		sb.WriteString("## Sources\n\n")
 
 		for _, ref := range r.References {
-			sb.WriteString(fmt.Sprintf("%d. %s\n", ref.Index, ref.URL))
+			if ref.Title == "" {
+				fmt.Fprintf(&sb, "%d. %s\n", ref.Index, ref.URL)
+
+				continue
+			}
+
+			fmt.Fprintf(&sb, "%d. [%s](%s)\n", ref.Index, ref.Title, ref.URL)
 		}
 	}
 

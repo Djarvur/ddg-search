@@ -6,19 +6,20 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Djarvur/ddg-search/internal/perplexity"
 	"github.com/urfave/cli/v3"
 )
 
-// version is set at build time via ldflags.
-const version = "dev"
+// version is set at build time via ldflags; it must be a var for the linker to patch it.
+var version = "dev"
 
 // Default CLI values.
 const (
 	defaultMaxResults = 5
-	defaultModel      = "sonar-medium-online"
+	defaultModel      = "sonar"
 
 	// Retry configuration.
 	defaultMaxRetries        = 3
@@ -31,8 +32,8 @@ var errNoQuery = errors.New("no search query provided")
 
 // errNoAPIKey is returned when the Perplexity API key is not set.
 var errNoAPIKey = errors.New(
-	"perplexity API key environment variable not set. " +
-		"Please set it in your .env file or shell environment",
+	"PERPLEXITY_API_KEY is not set. " +
+		"Export it in your shell environment before running perplexity-search",
 )
 
 func main() {
@@ -44,12 +45,12 @@ func main() {
 			// Search options
 			&cli.IntFlag{
 				Name:  "max-results",
-				Usage: "maximum number of results to return",
+				Usage: "maximum number of sources to list alongside the answer",
 				Value: defaultMaxResults,
 			},
 			&cli.StringFlag{
 				Name:  "model",
-				Usage: "Perplexity model to use (e.g., sonar-medium-online, sonar-pro-online)",
+				Usage: "Perplexity model to use (e.g., sonar, sonar-pro, sonar-reasoning)",
 				Value: defaultModel,
 			},
 			// Debug
@@ -76,7 +77,7 @@ func runSearch(ctx context.Context, cmd *cli.Command) error {
 		return errNoQuery
 	}
 
-	query := args.First()
+	query := strings.Join(args.Slice(), " ")
 
 	// Get flags
 	maxResults := cmd.Int("max-results")

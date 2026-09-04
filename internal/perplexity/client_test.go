@@ -59,10 +59,6 @@ func TestNewClient(t *testing.T) {
 		t.Fatal("NewClient returned nil")
 	}
 
-	if client.apiKey != apiKey {
-		t.Errorf("Expected apiKey %s, got %s", apiKey, client.apiKey)
-	}
-
 	if client.retryOptions.MaxRetries != retryOpts.MaxRetries {
 		t.Errorf("Expected MaxRetries %d, got %d", retryOpts.MaxRetries, client.retryOptions.MaxRetries)
 	}
@@ -211,7 +207,7 @@ func TestDo(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		_, err := client.Do(ctx, client.httpClient.R())
+		_, err := client.Do(ctx, http.MethodPost, chatCompletionsPath, client.httpClient.R())
 		if err == nil {
 			t.Error("Expected error on cancelled context")
 		}
@@ -237,7 +233,7 @@ func TestDo(t *testing.T) {
 
 		ctx := context.Background()
 
-		_, err := client.Do(ctx, client.httpClient.R())
+		_, err := client.Do(ctx, http.MethodPost, chatCompletionsPath, client.httpClient.R())
 		if err == nil {
 			t.Error("Expected error with invalid API key")
 		}

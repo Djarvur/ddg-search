@@ -14,8 +14,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-// version is set at build time via ldflags.
-const version = "dev"
+// version is set at build time via ldflags; it must be a var for the linker to patch it.
+var version = "dev"
 
 // Default CLI values.
 const (
@@ -98,14 +98,7 @@ func runSearch(ctx context.Context, cmd *cli.Command) error {
 		return errNoQuery
 	}
 
-	query := args.First()
-
-	var querySb82 strings.Builder
-	for i := 1; i < args.Len(); i++ {
-		querySb82.WriteString(" " + args.Get(i))
-	}
-
-	query += querySb82.String()
+	query := strings.Join(args.Slice(), " ")
 
 	// Build search options
 	searchOpts := config.SearchOptions{
