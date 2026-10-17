@@ -33,14 +33,16 @@ func TestSearchSendsPostToChatCompletions(t *testing.T) {
 	t.Parallel()
 
 	var (
-		gotMethod string
-		gotPath   string
-		gotBody   map[string]any
+		gotMethod      string
+		gotPath        string
+		gotIntegration []string
+		gotBody        map[string]any
 	)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotMethod = r.Method
 		gotPath = r.URL.Path
+		gotIntegration = r.Header.Values(integrationHeader)
 
 		body, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(body, &gotBody)
@@ -64,6 +66,10 @@ func TestSearchSendsPostToChatCompletions(t *testing.T) {
 
 	if gotBody["model"] != "sonar" {
 		t.Errorf("model = %v, want %q", gotBody["model"], "sonar")
+	}
+
+	if len(gotIntegration) != 1 || gotIntegration[0] != integrationName {
+		t.Errorf("%s = %v, want [%q]", integrationHeader, gotIntegration, integrationName)
 	}
 }
 
