@@ -37,6 +37,10 @@ const (
 	// chatCompletionsPath is the API path Search posts to, relative to apiBaseURL.
 	chatCompletionsPath = "/chat/completions"
 
+	// integrationHeader identifies this tool to the Perplexity API for attribution.
+	integrationHeader = "X-Pplx-Integration"
+	integrationName   = "ddg-search"
+
 	// Retry configuration constants.
 	defaultMaxRetries     = 3
 	defaultBaseDelay      = 1 * time.Second
@@ -92,6 +96,7 @@ func NewClient(apiKey string, retryOptions RetryOptions) *Client {
 		SetHeader("Authorization", "Bearer "+apiKey).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "application/json").
+		SetHeader(integrationHeader, integrationName).
 		SetTimeout(defaultRequestTimeout)
 
 	debugWriter := io.Discard
